@@ -2,8 +2,9 @@
   "name": "ai-course-rolling-proj",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "format": "prettier --write ."
   },
   "repository": {
@@ -19,6 +20,7 @@
   "homepage": "https://github.com/AlonBilman/ai-Course-rolling-proj#readme",
   "description": "",
   "devDependencies": {
+    "jest": "^29.7.0",
     "prettier": "^3.5.3"
   }
 }

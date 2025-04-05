@@ -24,3 +24,6 @@ package-lock.json
 # IDE files
 .idea/
 .vscode/
+
+# Text files
+*.txt
