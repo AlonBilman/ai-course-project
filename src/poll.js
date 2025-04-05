@@ -1,3 +1,7 @@
+/**
+ * A poll with options and voting.
+ *
+ */
 export class Poll {
   #id;
   #question;
@@ -6,7 +10,7 @@ export class Poll {
 
   /**
    * Initializes a new poll.
-   * @param {string|number} id - Poll ID.
+   * @param {number} id - Poll ID.
    * @param {string} question - Poll question.
    * @param {string[]} options - List of options.
    * @throws {Error} If inputs are invalid.
@@ -15,18 +19,18 @@ export class Poll {
     this.#validateInputs(question, options);
 
     this.#id = id;
-    this.#question = question.trim();
-    this.#options = options.map((opt) => opt.trim());
+    this.#question = question.trim().toLowerCase();
+    this.#options = options.map((opt) => opt.trim().toLowerCase());
     this.#votes = {};
     this.#options.forEach((option) => {
       this.#votes[option] = 0;
     });
   }
 
-  // Validates question and options
+  // Validates the question and options.
   #validateInputs(question, options) {
     if (!question?.trim()) {
-      throw new Error('Poll question cannot be empty');
+      throw new Error('Poll question can not be empty');
     }
 
     if (!Array.isArray(options) || options.length < 2) {
@@ -37,13 +41,13 @@ export class Poll {
       throw new Error('Poll options must be strings');
     }
 
-    const trimmed = options.map((opt) => opt.trim());
+    const trimmed = options.map((opt) => opt.trim().toLowerCase());
     if (new Set(trimmed).size !== trimmed.length) {
-      throw new Error('Poll options must be unique');
+      throw new Error('Poll options must be unique (case insensitive)');
     }
 
     if (trimmed.some((opt) => !opt)) {
-      throw new Error('Poll options cannot be empty');
+      throw new Error('Poll options can not be empty');
     }
   }
 
@@ -56,20 +60,45 @@ export class Poll {
   }
 
   /**
-   * Casts a vote for an option.
-   * @param {string} option - Option to vote for.
-   * @returns {number} Updated vote count.
-   * @throws {Error} If option is invalid.
+   * Gets the poll question.
+   * @returns {string}
    */
-  vote(option) {
-    if (!this.#options.includes(option)) {
-      throw new Error(`Invalid poll option: ${option}`);
-    }
-    return ++this.#votes[option];
+  get question() {
+    return this.#question;
   }
 
   /**
-   * Returns poll results.
+   * Gets the poll options.
+   * @returns {string[]}
+   */
+  get options() {
+    return [...this.#options];
+  }
+
+  /**
+   * Gets current vote counts.
+   * @returns {Object} A copy of the votes object.
+   */
+  get votes() {
+    return { ...this.#votes };
+  }
+
+  /**
+   * Casts a vote for an option.
+   * @param {string} option - Option to vote for.
+   * @returns {number} Updated vote count.
+   * @throws {Error} If the option is invalid.
+   */
+  vote(option) {
+    const trimmedAndLowerCasedOption = option.trim().toLowerCase();
+    if (!this.#options.includes(trimmedAndLowerCasedOption)) {
+      throw new Error(`Invalid poll option: ${option}`);
+    }
+    return ++this.#votes[trimmedAndLowerCasedOption];
+  }
+
+  /**
+   * Gets poll results summary.
    * @returns {{
    *   question: string,
    *   totalVotes: number,

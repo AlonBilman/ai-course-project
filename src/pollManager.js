@@ -22,7 +22,7 @@ export class PollManager {
    */
   createPoll(question, options) {
     const hasDuplicateQuestion = Array.from(this.polls.values()).some(
-      (poll) => poll.question === question,
+      (poll) => poll.question === question.trim().toLowerCase(),
     );
     if (hasDuplicateQuestion) {
       throw new Error('A poll with this question already exists');
