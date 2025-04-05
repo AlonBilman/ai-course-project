@@ -1,0 +1,24 @@
+{
+  "name": "ai-course-rolling-proj",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlonBilman/ai-Course-rolling-proj.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlonBilman/ai-Course-rolling-proj/issues"
+  },
+  "homepage": "https://github.com/AlonBilman/ai-Course-rolling-proj#readme",
+  "description": "",
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
