@@ -1,4 +1,10 @@
-import { pollManager } from '../src/index.js';
+import { PollManager } from '../src/pollManager.js';
+
+let pollManager;
+
+beforeAll(() => {
+  pollManager = new PollManager();
+});
 
 describe('Poll System Integration Tests', () => {
   describe('Basic Functionality', () => {
