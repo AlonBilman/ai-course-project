@@ -70,11 +70,18 @@ describe('Poll Class Unit Tests', () => {
       expect(() => new Poll(1, 'Test?', ['A', '   '])).toThrow('Poll options can not be empty');
     });
 
-    test('should throw error when voting for invalid option', () => {
+    test('should validate voting options correctly', () => {
       // Arrange
       const poll = new Poll(1, 'Test?', ['A', 'B']);
       // Act & Assert
       expect(() => poll.vote('C')).toThrow('Invalid poll option: C');
+      expect(() => poll.vote(null)).toThrow('Vote option cannot be null or undefined');
+      expect(() => poll.vote(undefined)).toThrow('Vote option cannot be null or undefined');
+      expect(() => poll.vote(123)).toThrow('Vote option must be a non-empty string');
+      expect(() => poll.vote({})).toThrow('Vote option must be a non-empty string');
+      expect(() => poll.vote('')).toThrow('Vote option must be a non-empty string');
+      expect(poll.vote('  A  ')).toBe(1);
+      expect(poll.vote('a')).toBe(2);
     });
   });
 });
