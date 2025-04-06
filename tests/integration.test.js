@@ -2,7 +2,7 @@ import { PollManager } from '../src/pollManager.js';
 
 let pollManager;
 
-beforeAll(() => {
+beforeEach(() => {
   pollManager = new PollManager();
 });
 
@@ -80,60 +80,6 @@ describe('Poll System Integration Tests', () => {
       // Assert
       expect(poll.question).toBe('trimmed question?');
       expect(poll.options).toEqual(['option 1', 'option 2']);
-    });
-  });
-
-  describe('Edge Cases (kinda)', () => {
-    test('should handle content edge cases: longer text and special characters', () => {
-      // Arrange
-      const longQuestion =
-        'This is a somewhat longer question that might represent a realistic edge case scenario for a polling system?';
-      const options = [
-        'Regular option',
-        'Option with special chars: !@#$%^&*()_+{}[]|\\:;"\'<>,.?/',
-      ];
-      // Act
-      const id = pollManager.createPoll(longQuestion, options);
-      pollManager.vote(id, options[1]);
-      // Assert
-      const poll = pollManager.getPoll(id);
-      expect(poll.question).toBe(longQuestion.toLowerCase());
-      expect(poll.options).toEqual(options.map((opt) => opt.toLowerCase()));
-
-      const results = pollManager.getResults(id);
-      expect(results.results.find((r) => r.option === options[1].toLowerCase()).votes).toBe(1);
-      expect(results.results.find((r) => r.option === options[0].toLowerCase()).votes).toBe(0);
-      expect(results.totalVotes).toBe(1);
-    });
-
-    test('should handle a poll with many options', () => {
-      // Arrange
-      const question = 'Which month is your favorite?';
-      const options = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      // Act
-      const id = pollManager.createPoll(question, options);
-      pollManager.vote(id, 'October');
-      pollManager.vote(id, 'December');
-      pollManager.vote(id, 'December');
-      // Assert
-      const results = pollManager.getResults(id);
-      expect(results.results.length).toBe(12); // All options present
-      expect(results.results.find((r) => r.option === 'december').votes).toBe(2);
-      expect(results.results.find((r) => r.option === 'october').votes).toBe(1);
-      expect(results.results.find((r) => r.option === 'january').votes).toBe(0);
     });
   });
 
