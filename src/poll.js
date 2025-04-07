@@ -90,6 +90,12 @@ export class Poll {
    * @throws {Error} If the option is invalid.
    */
   vote(option) {
+    if (option === undefined || option === null) {
+      throw new Error('Vote option cannot be null or undefined');
+    }
+    if (typeof option !== 'string' || !option.trim()) {
+      throw new Error('Vote option must be a non-empty string');
+    }
     const trimmedAndLowerCasedOption = option.trim().toLowerCase();
     if (!this.#options.includes(trimmedAndLowerCasedOption)) {
       throw new Error(`Invalid poll option: ${option}`);

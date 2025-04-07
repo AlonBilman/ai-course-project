@@ -2,14 +2,13 @@ import { Poll } from '../src/poll.js';
 
 describe('Poll Class Unit Tests', () => {
   describe('Basic Functionality Tests', () => {
-    test('should init a poll and check properties', () => {
+    test('should init a poll, check properties, and generate correct results format', () => {
       // Arrange
       const id = 1;
       const question = 'Test question?';
       const options = ['Option 1', 'Option 2', 'Option 3'];
-      // Act
       const poll = new Poll(id, question, options);
-      // Assert
+      // Assert properties
       expect(poll.id).toBe(id);
       expect(poll.question).toBe(question.toLowerCase());
       expect(poll.options).toEqual(options.map((opt) => opt.toLowerCase()));
@@ -18,47 +17,21 @@ describe('Poll Class Unit Tests', () => {
         'option 2': 0,
         'option 3': 0,
       });
-    });
-
-    test('should record a vote correctly', () => {
-      // Arrange
-      const poll = new Poll(1, 'Test?', ['A', 'B']);
-      // Act
-      const votes = poll.vote('A');
-      // Assert
-      expect(votes).toBe(1);
-      expect(poll.votes['a']).toBe(1);
-      expect(poll.votes['b']).toBe(0);
-    });
-
-    test('should generate correct results format', () => {
-      // Arrange
-      const poll = new Poll(1, 'Test?', ['A', 'B']);
-      poll.vote('A');
-      poll.vote('B');
-      poll.vote('A');
-      // Act
+      // Act - vote on options
+      poll.vote('Option 1');
+      poll.vote('Option 2');
+      poll.vote('Option 1');
+      // Assert results format
       const results = poll.getResults();
-      // Assert
       expect(results).toEqual({
-        question: 'test?',
+        question: 'test question?',
         totalVotes: 3,
         results: [
-          { option: 'a', votes: 2 },
-          { option: 'b', votes: 1 },
+          { option: 'option 1', votes: 2 },
+          { option: 'option 2', votes: 1 },
+          { option: 'option 3', votes: 0 },
         ],
       });
-    });
-
-    test('should handle case insensitive voting and trimming', () => {
-      // Arrange
-      const poll = new Poll(1, 'Test?', ['Option A', 'Option B']);
-      // Act
-      poll.vote('OPTION a');
-      poll.vote('option a ');
-      poll.vote('  Option A');
-      // Assert
-      expect(poll.votes['option a']).toBe(3);
     });
   });
 
@@ -97,11 +70,18 @@ describe('Poll Class Unit Tests', () => {
       expect(() => new Poll(1, 'Test?', ['A', '   '])).toThrow('Poll options can not be empty');
     });
 
-    test('should throw error when voting for invalid option', () => {
+    test('should validate voting options correctly', () => {
       // Arrange
       const poll = new Poll(1, 'Test?', ['A', 'B']);
       // Act & Assert
       expect(() => poll.vote('C')).toThrow('Invalid poll option: C');
+      expect(() => poll.vote(null)).toThrow('Vote option cannot be null or undefined');
+      expect(() => poll.vote(undefined)).toThrow('Vote option cannot be null or undefined');
+      expect(() => poll.vote(123)).toThrow('Vote option must be a non-empty string');
+      expect(() => poll.vote({})).toThrow('Vote option must be a non-empty string');
+      expect(() => poll.vote('')).toThrow('Vote option must be a non-empty string');
+      expect(poll.vote('  A  ')).toBe(1);
+      expect(poll.vote('a')).toBe(2);
     });
   });
 });
