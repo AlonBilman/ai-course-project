@@ -44,13 +44,3 @@ The system validates all inputs and throws appropriate errors for:
 
 - **Prettier** – Used for consistent code formatting
 - **Jest** – Test framework for checking both normal and edge-case scenarios
-
----
-
-## Where AI helped me
-
-First, I read the task and then used ChatGPT to give me a work structure for how I should start working on the project.
-After that, I created a GitHub repo and used VS Code with GitHub Copilot to start coding.
-I worked with Copilot using the same structure I got from ChatGPT and built the project.
-At the end, I gave the full task to Copilot (with Claude) and fixed the small things it didn't like.
-And that’s how I completed the task!
