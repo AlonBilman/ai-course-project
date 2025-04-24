@@ -5,6 +5,10 @@ import { clearStorage } from '../src/storage/memoryStorage.js'; // To reset stat
 let server;
 let baseURL;
 
+beforeAll(async () => {
+  await clearStorage(); // Clear storage before starting the server
+});
+
 // Start the server before all tests in this file
 beforeAll(async () => {
   try {

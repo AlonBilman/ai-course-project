@@ -11,6 +11,10 @@ import { createUser, BusinessLogicError } from '../src/services/userService.js';
 import { clearStorage, findPollById as findPollInStorage } from '../src/storage/memoryStorage.js';
 import { validate as validateUUID } from 'uuid'; // Import UUID validation
 
+beforeEach(async () => {
+  await clearStorage(); // Ensure storage is cleared before each test
+});
+
 // Helper function to create a user for tests
 const setupUser = async (username) => {
   try {

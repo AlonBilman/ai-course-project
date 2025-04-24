@@ -13,6 +13,10 @@ import {
 
 const storageFilePath = path.resolve(process.cwd(), 'storage.json');
 
+beforeEach(async () => {
+  await clearStorage(); // Ensure storage is cleared before each test
+});
+
 // Helper to read the raw file content for verification
 async function readRawStorageFile() {
   try {

@@ -14,6 +14,9 @@ async function readData() {
     const data = await fs.readFile(storageFilePath, 'utf-8');
     const parsedData = JSON.parse(data);
     // Ensure votes are converted back to Maps after reading
+    if (data.trim() === '') {
+      return { users: {}, polls: {} };
+    }
     if (parsedData.polls) {
       for (const pollId in parsedData.polls) {
         if (parsedData.polls[pollId].votes && !(parsedData.polls[pollId].votes instanceof Map)) {

@@ -6,9 +6,10 @@ A multi-user, Express-based polling server with layered logic, modularity, and a
 
 ## Team Info
 
-- **Full Name 1:** [Your Student ID 1]
-- **Full Name 2:** [Your Student ID 2]
-- _(Add more team members as needed)_
+- **Adi Karif:** 208295576
+- **Yakir Twil:** 313528168
+- **Alon Bilman:** 211684535
+- **Ahmad Danaf:** 211787833
 
 ---
 
@@ -258,9 +259,12 @@ _(Where `Poll` is an object `{ id: string, question: string, options: string[], 
 ## Team Retrospective
 
 - **Collaboration Reflections:**
-  - _(Discuss how the team worked together, communication, task division, challenges, successes)_
+
+  Our team had two main meetings – one on Discord and one in person. We used GitHub Copilot to help us write the assignment more efficiently, and we conducted a code review to ensure quality and consistency.
+
 - **Lessons Learned on AI Usage:**
-  - _(Describe how AI (like GitHub Copilot) was used - e.g., code generation, debugging, documentation, testing. What worked well? What were the limitations? How did it impact learning and collaboration?)_
+
+  At first, we tried using ChatGPT by sending it the full assignment, but it struggled to integrate the new requirements with our previous exercise. When we switched to GitHub Copilot, it was much better at understanding the context and building on top of our existing code. One of the main challenges was that Copilot sometimes generated overly complex designs, so we had to simplify and refactor parts of it. Initially, we planned to divide the work among team members, but we realized it was more efficient to use Copilot for the core implementation and then focus on reviewing, correcting, and redesigning its output collaboratively. This approach boosted our productivity and helped us learn by analyzing and improving Copilot's suggestions.
 
 ---
 

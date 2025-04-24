@@ -1,7 +1,6 @@
 import express from 'express';
 import * as userService from '../services/userService.js';
 import * as pollService from '../services/pollService.js'; // Needed for user-related poll listings
-import { BusinessLogicError } from '../services/userService.js'; // Import the custom error
 
 const router = express.Router();
 
