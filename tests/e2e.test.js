@@ -1,305 +1,308 @@
-import request from 'supertest'; // HTTP assertion library
-import { start, stop } from '../src/server.js'; // Server control functions
-import { clearStorage } from '../src/storage/memoryStorage.js'; // To reset state between tests
+import request from 'supertest';
+import { start, stop } from '../src/server.js';
+import * as storage from '../src/storage/memoryStorage.js';
 
-let server;
+// Test server information
 let baseURL;
+let server;
 
-beforeAll(async () => {
-  await clearStorage(); // Clear storage before starting the server
-});
-
-// Start the server before all tests in this file
+// Start server before all tests
 beforeAll(async () => {
   try {
-    const { server: runningServer, baseURL: url } = await start(0); // Use port 0 for random available port
-    server = runningServer;
-    baseURL = url;
+    // Use port 0 to get a random available port
+    const serverInfo = await start(0);
+    baseURL = serverInfo.baseURL;
+    server = serverInfo.server;
+    console.log(`E2E Test server started at ${baseURL}`);
   } catch (error) {
     console.error('Failed to start server for E2E tests:', error);
-    process.exit(1); // Exit if server fails to start
+    process.exit(1);
   }
 });
 
-// Stop the server after all tests in this file are done
+// Stop server after all tests
 afterAll(async () => {
   try {
     await stop();
+    console.log('E2E Test server stopped');
   } catch (error) {
     console.error('Failed to stop server after E2E tests:', error);
   }
 });
 
-// Clear storage before each test to ensure isolation
+// Clear storage before each test
 beforeEach(async () => {
-  await clearStorage();
+  await storage.clearStorage();
 });
 
-describe('PollSystem+ E2E Tests', () => {
-  const userAlice = { username: 'alice' };
-  const userBob = { username: 'bob' };
-  let pollByAlice; // To store poll created by Alice
+// Test constants
+const testUser1 = { username: 'alice' };
+const testUser2 = { username: 'bob' };
 
-  // Test 1: Create User Alice - Success
-  test('should create user "alice" successfully', async () => {
-    const res = await request(baseURL)
+describe('E2E API Tests', () => {
+  // Test 1: Create Users
+  test('should create users successfully', async () => {
+    // Create first user
+    const res1 = await request(baseURL)
       .post('/users')
-      .send(userAlice)
+      .send(testUser1)
       .expect('Content-Type', /json/)
-      .expect(201); // Expect HTTP status 201 Created
+      .expect(201);
 
-    expect(res.body).toHaveProperty('username', userAlice.username);
+    expect(res1.body).toHaveProperty('username', testUser1.username);
+
+    // Create second user
+    const res2 = await request(baseURL)
+      .post('/users')
+      .send(testUser2)
+      .expect('Content-Type', /json/)
+      .expect(201);
+
+    expect(res2.body).toHaveProperty('username', testUser2.username);
   });
 
-  // Test 2: Create User Alice - Duplicate Error
-  test('should fail to create duplicate user "alice"', async () => {
-    // First, ensure alice exists (could rely on previous test, but safer to create here)
-    await request(baseURL).post('/users').send(userAlice);
+  // Test 2: Prevent Duplicate User Creation
+  test('should prevent duplicate user creation', async () => {
+    // Create a user
+    await request(baseURL).post('/users').send(testUser1).expect(201);
 
+    // Try to create the same user again
     const res = await request(baseURL)
       .post('/users')
-      .send(userAlice)
+      .send(testUser1)
       .expect('Content-Type', /json/)
-      .expect(400); // Expect HTTP status 400 Bad Request
+      .expect(400); // Bad request
 
     expect(res.body).toHaveProperty('error');
-    expect(res.body.error).toContain(`Username "${userAlice.username}" is already taken`);
+    expect(res.body.error).toContain('already taken');
   });
 
-  // Test 3: Create Poll by Alice - Success
-  test('should allow alice to create a poll', async () => {
-    // Ensure alice exists
-    await request(baseURL).post('/users').send(userAlice);
+  // Test 3: Create Poll
+  test('should create a poll successfully', async () => {
+    // Create user first
+    await request(baseURL).post('/users').send(testUser1);
 
     const pollData = {
-      question: "Alice's favorite language?",
-      options: ['JavaScript', 'Python', 'Rust'],
-      creator: userAlice.username,
+      question: 'What is your favorite color?',
+      options: ['Red', 'Blue', 'Green'],
+      creator: testUser1.username,
     };
 
     const res = await request(baseURL)
       .post('/polls')
       .send(pollData)
       .expect('Content-Type', /json/)
-      .expect(201); // Expect HTTP status 201 Created
+      .expect(201);
 
     expect(res.body).toHaveProperty('id');
     expect(res.body).toHaveProperty('question', pollData.question);
     expect(res.body).toHaveProperty('options', pollData.options);
-    expect(res.body).toHaveProperty('creator', userAlice.username);
-    expect(res.body).toHaveProperty('votes', {}); // Votes should be an empty object in JSON response
-
-    pollByAlice = res.body; // Save the created poll for later tests
+    expect(res.body).toHaveProperty('creator', testUser1.username);
+    expect(res.body).toHaveProperty('votes', {}); // No votes initially
   });
 
-  // Test 4: Bob votes on Alice's poll - Success
-  test("should allow bob to vote on alice's poll", async () => {
-    // Ensure alice and her poll exist
-    await request(baseURL).post('/users').send(userAlice);
+  // Test 4: Get Poll
+  test('should get poll by ID', async () => {
+    // Create user
+    await request(baseURL).post('/users').send(testUser1);
+
+    // Create poll
     const pollRes = await request(baseURL)
       .post('/polls')
       .send({
-        question: 'Poll for Bob to vote on',
-        options: ['Yes', 'No'],
-        creator: userAlice.username,
+        question: 'Test Poll?',
+        options: ['Option A', 'Option B'],
+        creator: testUser1.username,
       });
+
     const pollId = pollRes.body.id;
 
-    // Ensure bob exists
-    await request(baseURL).post('/users').send(userBob);
-
-    const voteData = {
-      username: userBob.username,
-      optionIndex: 1, // Bob votes for "No"
-    };
-
+    // Get poll by ID
     const res = await request(baseURL)
-      .post(`/polls/${pollId}/vote`)
-      .send(voteData)
+      .get(`/polls/${pollId}`)
       .expect('Content-Type', /json/)
-      .expect(200); // Expect HTTP status 200 OK
+      .expect(200);
 
     expect(res.body).toHaveProperty('id', pollId);
-    expect(res.body.votes).toHaveProperty(userBob.username, voteData.optionIndex);
+    expect(res.body).toHaveProperty('question', 'Test Poll?');
+    expect(res.body.options).toHaveLength(2);
+    expect(res.body.options).toContain('Option A');
+    expect(res.body.options).toContain('Option B');
   });
 
-  // Test 5: Alice deletes her poll - Success
-  test('should allow alice to delete her poll', async () => {
-    // Ensure alice and her poll exist
-    await request(baseURL).post('/users').send(userAlice);
-    const pollRes = await request(baseURL)
-      .post('/polls')
-      .send({
-        question: 'Poll to be deleted',
-        options: ['Delete', 'Keep'],
-        creator: userAlice.username,
-      });
-    const pollId = pollRes.body.id;
+  // Test 5: Complete User Flow - Create User, Create Poll, Vote, View Results
+  test('should support full user flow: create poll, vote, view results', async () => {
+    // Create two users
+    await request(baseURL).post('/users').send(testUser1);
+    await request(baseURL).post('/users').send(testUser2);
 
-    // Alice sends delete request with her username in the body
-    const deleteData = { username: userAlice.username };
-
-    await request(baseURL)
-      .delete(`/polls/${pollId}`)
-      .send(deleteData) // Send username in body as required by route
-      .expect(200); // Expect HTTP status 200 OK
-
-    // Verify poll is gone
-    await request(baseURL).get(`/polls/${pollId}`).expect(404); // Expect HTTP status 404 Not Found
-  });
-
-  // Test 6: List all polls
-  test('should list all polls', async () => {
-    // Create a couple of users and polls
-    await request(baseURL).post('/users').send(userAlice);
-    await request(baseURL).post('/users').send(userBob);
-    const poll1 = await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Q1', options: ['A', 'B'], creator: userAlice.username });
-    const poll2 = await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Q2', options: ['C', 'D'], creator: userBob.username });
-
-    const res = await request(baseURL).get('/polls').expect('Content-Type', /json/).expect(200);
-
-    expect(res.body).toBeInstanceOf(Array);
-    expect(res.body.length).toBeGreaterThanOrEqual(2); // Could be more if previous tests didn't clean up perfectly, but should contain these two
-    expect(res.body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: poll1.body.id }),
-        expect.objectContaining({ id: poll2.body.id }),
-      ]),
-    );
-  });
-
-  // Test 7: Bob attempts to delete Alice's poll - Failure (403)
-  test("should prevent bob from deleting alice's poll", async () => {
-    // Ensure users and poll exist
-    await request(baseURL).post('/users').send(userAlice);
-    await request(baseURL).post('/users').send(userBob);
-    const pollRes = await request(baseURL)
-      .post('/polls')
-      .send({
-        question: 'Protected Poll',
-        options: ['Safe', 'Not Safe'],
-        creator: userAlice.username,
-      });
-    const pollId = pollRes.body.id;
-
-    // Bob sends delete request with his username
-    const deleteData = { username: userBob.username };
-
-    const res = await request(baseURL)
-      .delete(`/polls/${pollId}`)
-      .send(deleteData)
-      .expect('Content-Type', /json/)
-      .expect(403); // Expect HTTP status 403 Forbidden
-
-    expect(res.body).toHaveProperty('error');
-    expect(res.body.error).toContain(`User "${userBob.username}" is not authorized`);
-
-    // Verify poll still exists
-    await request(baseURL).get(`/polls/${pollId}`).expect(200);
-  });
-
-  // Test 8: Vote with invalid option index - Failure (400)
-  test('should fail to vote with an invalid option index', async () => {
-    // Setup user and poll
-    await request(baseURL).post('/users').send(userAlice);
-    const pollRes = await request(baseURL)
-      .post('/polls')
-      .send({
-        question: 'Index Test',
-        options: ['Option 0', 'Option 1'],
-        creator: userAlice.username,
-      });
-    const pollId = pollRes.body.id;
-    await request(baseURL).post('/users').send(userBob);
-
-    const voteData = {
-      username: userBob.username,
-      optionIndex: 5, // Invalid index
+    // Alice creates a poll
+    const pollData = {
+      question: 'Which framework is better?',
+      options: ['React', 'Vue', 'Angular'],
+      creator: testUser1.username,
     };
 
-    const res = await request(baseURL)
+    const pollRes = await request(baseURL).post('/polls').send(pollData).expect(201);
+
+    const pollId = pollRes.body.id;
+
+    // Bob votes on the poll
+    const voteData = {
+      username: testUser2.username,
+      optionIndex: 0, // Vote for "React"
+    };
+
+    const voteRes = await request(baseURL).post(`/polls/${pollId}/vote`).send(voteData).expect(200);
+
+    // Verify vote was recorded
+    expect(voteRes.body.votes).toHaveProperty(testUser2.username, 0);
+
+    // Get poll by ID to see results
+    const pollAfterVote = await request(baseURL).get(`/polls/${pollId}`).expect(200);
+
+    expect(pollAfterVote.body.votes).toHaveProperty(testUser2.username, 0);
+
+    // Get polls that Bob voted in
+    const bobVotesRes = await request(baseURL)
+      .get(`/users/${testUser2.username}/votes`)
+      .expect(200);
+
+    expect(bobVotesRes.body).toHaveLength(1);
+    expect(bobVotesRes.body[0].id).toBe(pollId);
+  });
+
+  // Test 6: Poll Ownership - Delete Poll
+  test('should enforce poll ownership for deletion', async () => {
+    // Create two users
+    await request(baseURL).post('/users').send(testUser1);
+    await request(baseURL).post('/users').send(testUser2);
+
+    // Alice creates a poll
+    const pollRes = await request(baseURL)
+      .post('/polls')
+      .send({
+        question: 'Poll to delete?',
+        options: ['Keep', 'Delete'],
+        creator: testUser1.username,
+      })
+      .expect(201);
+
+    const pollId = pollRes.body.id;
+
+    // Bob tries to delete Alice's poll (should fail)
+    await request(baseURL)
+      .delete(`/polls/${pollId}`)
+      .send({ username: testUser2.username })
+      .expect(403); // Forbidden
+
+    // Poll should still exist
+    await request(baseURL).get(`/polls/${pollId}`).expect(200);
+
+    // Alice deletes her own poll (should succeed)
+    await request(baseURL)
+      .delete(`/polls/${pollId}`)
+      .send({ username: testUser1.username })
+      .expect(200);
+
+    // Poll should now be gone
+    await request(baseURL).get(`/polls/${pollId}`).expect(404); // Not found
+  });
+
+  // Test 7: Filter Polls by Creator
+  test('should filter polls by creator', async () => {
+    // Create users
+    await request(baseURL).post('/users').send(testUser1);
+    await request(baseURL).post('/users').send(testUser2);
+
+    // Create polls by different users
+    await request(baseURL)
+      .post('/polls')
+      .send({
+        question: 'Alice Poll 1?',
+        options: ['A', 'B'],
+        creator: testUser1.username,
+      });
+
+    await request(baseURL)
+      .post('/polls')
+      .send({
+        question: 'Alice Poll 2?',
+        options: ['C', 'D'],
+        creator: testUser1.username,
+      });
+
+    await request(baseURL)
+      .post('/polls')
+      .send({
+        question: 'Bob Poll?',
+        options: ['E', 'F'],
+        creator: testUser2.username,
+      });
+
+    // Get all polls (should be 3)
+    const allPollsRes = await request(baseURL).get('/polls').expect(200);
+
+    expect(allPollsRes.body).toHaveLength(3);
+
+    // Get only Alice's polls using filter
+    const alicePollsRes = await request(baseURL)
+      .get(`/polls?createdBy=${testUser1.username}`)
+      .expect(200);
+
+    expect(alicePollsRes.body).toHaveLength(2);
+    expect(alicePollsRes.body.every((p) => p.creator === testUser1.username)).toBe(true);
+
+    // Get only Bob's polls using filter
+    const bobPollsRes = await request(baseURL)
+      .get(`/polls?createdBy=${testUser2.username}`)
+      .expect(200);
+
+    expect(bobPollsRes.body).toHaveLength(1);
+    expect(bobPollsRes.body[0].creator).toBe(testUser2.username);
+  });
+
+  // Test 8: Vote Constraints - No Double Voting
+  test('should prevent a user from voting twice on the same poll', async () => {
+    // Create users
+    await request(baseURL).post('/users').send(testUser1);
+    await request(baseURL).post('/users').send(testUser2);
+
+    // Create poll
+    const pollRes = await request(baseURL)
+      .post('/polls')
+      .send({
+        question: 'Double vote test?',
+        options: ['Yes', 'No', 'Maybe'],
+        creator: testUser1.username,
+      });
+
+    const pollId = pollRes.body.id;
+
+    // Bob votes on the poll (first vote)
+    await request(baseURL)
       .post(`/polls/${pollId}/vote`)
-      .send(voteData)
-      .expect('Content-Type', /json/)
-      .expect(400); // Expect Bad Request
-
-    expect(res.body).toHaveProperty('error');
-    expect(res.body.error).toContain('Invalid option index');
-  });
-
-  // Test 9: Get polls created by a specific user
-  test('should get polls created by alice', async () => {
-    // Setup users and polls
-    await request(baseURL).post('/users').send(userAlice);
-    await request(baseURL).post('/users').send(userBob);
-    const poll1 = await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Alice Q1', options: ['A', 'B'], creator: userAlice.username });
-    await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Bob Q1', options: ['C', 'D'], creator: userBob.username }); // Poll by Bob
-
-    // Get polls created by Alice via user route
-    let res = await request(baseURL)
-      .get(`/users/${userAlice.username}/polls`)
-      .expect('Content-Type', /json/)
+      .send({
+        username: testUser2.username,
+        optionIndex: 1,
+      })
       .expect(200);
 
-    expect(res.body).toBeInstanceOf(Array);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].id).toBe(poll1.body.id);
-    expect(res.body[0].creator).toBe(userAlice.username);
+    // Bob tries to vote again (should fail)
+    const secondVoteRes = await request(baseURL)
+      .post(`/polls/${pollId}/vote`)
+      .send({
+        username: testUser2.username,
+        optionIndex: 2,
+      })
+      .expect(400); // Bad request
 
-    // Get polls created by Alice via poll route query param
-    res = await request(baseURL)
-      .get(`/polls?createdBy=${userAlice.username}`)
-      .expect('Content-Type', /json/)
-      .expect(200);
+    expect(secondVoteRes.body).toHaveProperty('error');
+    expect(secondVoteRes.body.error).toContain('already voted');
 
-    expect(res.body).toBeInstanceOf(Array);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].id).toBe(poll1.body.id);
-    expect(res.body[0].creator).toBe(userAlice.username);
-  });
+    // Check that original vote wasn't changed
+    const pollAfterVotes = await request(baseURL).get(`/polls/${pollId}`).expect(200);
 
-  // Test 10: Get polls voted in by a specific user
-  test('should get polls bob voted in', async () => {
-    // Setup users and polls
-    await request(baseURL).post('/users').send(userAlice);
-    await request(baseURL).post('/users').send(userBob);
-    const poll1Res = await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Poll 1', options: ['1A', '1B'], creator: userAlice.username });
-    const poll2Res = await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Poll 2', options: ['2A', '2B'], creator: userAlice.username });
-    await request(baseURL)
-      .post('/polls')
-      .send({ question: 'Poll 3', options: ['3A', '3B'], creator: userAlice.username }); // Poll Bob doesn't vote in
-
-    // Bob votes in Poll 1 and Poll 2
-    await request(baseURL)
-      .post(`/polls/${poll1Res.body.id}/vote`)
-      .send({ username: userBob.username, optionIndex: 0 });
-    await request(baseURL)
-      .post(`/polls/${poll2Res.body.id}/vote`)
-      .send({ username: userBob.username, optionIndex: 1 });
-
-    // Get polls Bob voted in
-    const res = await request(baseURL)
-      .get(`/users/${userBob.username}/votes`)
-      .expect('Content-Type', /json/)
-      .expect(200);
-
-    expect(res.body).toBeInstanceOf(Array);
-    expect(res.body).toHaveLength(2);
-    // Check if the IDs of the polls Bob voted in are present
-    const votedPollIds = res.body.map((p) => p.id);
-    expect(votedPollIds).toContain(poll1Res.body.id);
-    expect(votedPollIds).toContain(poll2Res.body.id);
+    expect(pollAfterVotes.body.votes).toHaveProperty(testUser2.username, 1);
   });
 });

@@ -1,46 +1,4 @@
 {
-  "users": {
-    "alice": {
-      "username": "alice"
-    },
-    "bob": {
-      "username": "bob"
-    }
-  },
-  "polls": {
-    "5e1bf6f4-52f9-4789-a436-85ee83e732e6": {
-      "id": "5e1bf6f4-52f9-4789-a436-85ee83e732e6",
-      "question": "Poll 1",
-      "options": [
-        "1A",
-        "1B"
-      ],
-      "creator": "alice",
-      "votes": {
-        "bob": 0
-      }
-    },
-    "a0402ddd-4eb5-4073-b68a-d4623ecbd35a": {
-      "id": "a0402ddd-4eb5-4073-b68a-d4623ecbd35a",
-      "question": "Poll 2",
-      "options": [
-        "2A",
-        "2B"
-      ],
-      "creator": "alice",
-      "votes": {
-        "bob": 1
-      }
-    },
-    "3f07303c-aa11-4ceb-942c-a811e7b43ae9": {
-      "id": "3f07303c-aa11-4ceb-942c-a811e7b43ae9",
-      "question": "Poll 3",
-      "options": [
-        "3A",
-        "3B"
-      ],
-      "creator": "alice",
-      "votes": {}
-    }
-  }
+  "users": {},
+  "polls": {}
 }
